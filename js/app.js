@@ -12,11 +12,12 @@
   // Vistas que se pueden restaurar desde la URL o con el botón "atrás".
   // Las demás (session, done, practice) dependen de parámetros que la URL
   // no lleva, así que restaurarlas a ciegas mandaría al bloque equivocado.
-  const RESTORABLE = ['home', 'progress', 'tutor', 'settings'];
+  const RESTORABLE = ['home', 'progress', 'exams', 'tutor', 'settings'];
 
   const NAV = [
     { id: 'home', label: 'Hoy', icon: 'home' },
     { id: 'progress', label: 'Progreso', icon: 'chart' },
+    { id: 'exams', label: 'Examen', icon: 'exam' },
     { id: 'tutor', label: 'Tutor', icon: 'chat' },
     { id: 'settings', label: 'Ajustes', icon: 'cog' },
   ];

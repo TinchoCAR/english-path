@@ -908,6 +908,340 @@
   };
 
   /* ============================================================
+     MODO EXAMEN — pruebas del colegio
+     Todo lo de acá es independiente del progreso real: no da XP,
+     no mueve la racha y no toca el vocabulario ni las unidades.
+     ============================================================ */
+
+  views.exams = function (root) {
+    const lista = App.exams.sorted();
+    root.innerHTML = '';
+
+    root.appendChild(el('h1', {}, 'Examen'));
+    root.appendChild(el('p', { class: 'muted', style: 'margin-top:-8px' },
+      'Prácticas y juegos para las pruebas del colegio. Separado de tu ruta a B2: acá no ganás XP ni movés la racha.'));
+
+    if (!lista.length) {
+      root.appendChild(el('div', { class: 'card' }, [
+        el('div', { class: 'empty' }, [
+          el('div', { class: 'empty-icon' }, '📝'),
+          el('h3', {}, 'Todavía no hay ninguna prueba'),
+          el('p', { class: 'muted' },
+            'Cargá los temas que te toman y la app te arma vocabulario, ejercicios y juegos para practicarlos.'),
+        ]),
+      ]));
+    }
+
+    lista.forEach((ex) => {
+      const dias = App.exams.daysLeft(ex);
+      const urgencia = dias === null ? '' : dias < 0 ? 'pasada' : dias === 0 ? 'hoy' : dias <= 3 ? 'pronto' : '';
+      const card = el('button', { class: 'block' }, [
+        el('div', { class: 'block-emoji' }, dias !== null && dias >= 0 && dias <= 3 ? '🔥' : '📝'),
+        el('div', { class: 'block-body' }, [
+          el('div', { class: 'block-title' }, ex.name),
+          el('div', { class: 'block-desc' },
+            (ex.topics || []).slice(0, 3).join(' · ') || 'Sin temas cargados'),
+          el('div', { class: 'faint', style: 'margin-top:3px' },
+            [
+              dias === null ? 'sin fecha'
+                : dias < 0 ? `fue hace ${-dias} día${dias === -1 ? '' : 's'}`
+                : dias === 0 ? 'ES HOY'
+                : `faltan ${dias} día${dias === 1 ? '' : 's'}`,
+              `${(ex.vocab || []).length} palabras`,
+              `${(ex.questions || []).length} ejercicios`,
+            ].join(' · ')),
+        ]),
+        el('div', { class: 'block-check' }, '→'),
+      ]);
+      if (urgencia === 'hoy' || urgencia === 'pronto') card.style.borderColor = 'var(--amber)';
+      if (urgencia === 'pasada') card.style.opacity = '.6';
+      card.addEventListener('click', () => App.app.go('examDetail', { id: ex.id }));
+      root.appendChild(card);
+    });
+
+    const nuevo = el('button', { class: 'btn btn-primary btn-lg mt' }, '+ Cargar una prueba');
+    nuevo.addEventListener('click', () => App.app.go('examNew'));
+    root.appendChild(nuevo);
+  };
+
+  /* ---------- Crear una prueba ---------- */
+  views.examNew = function (root) {
+    root.innerHTML = '';
+    const back = el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:14px' }, '← Volver');
+    back.addEventListener('click', () => App.app.go('exams'));
+    root.appendChild(back);
+
+    root.appendChild(el('h1', {}, 'Nueva prueba'));
+
+    const card = el('div', { class: 'card' });
+    root.appendChild(card);
+
+    const nombre = el('input', { type: 'text', placeholder: 'Prueba de inglés — Unit 4' });
+    card.appendChild(el('label', { class: 'field' }, [el('span', {}, 'Nombre'), nombre]));
+
+    const fecha = el('input', { type: 'date' });
+    card.appendChild(el('label', { class: 'field' }, [el('span', {}, 'Fecha (opcional)'), fecha]));
+
+    const temas = el('textarea', {
+      placeholder: 'Pegá acá lo que te toman. Por ejemplo:\n\nPresent perfect vs past simple\nPhrasal verbs de viaje\nVocabulario de la unidad 4: airport, luggage, delay…\nComparativos y superlativos',
+      style: 'min-height:150px',
+    });
+    card.appendChild(el('label', { class: 'field' }, [
+      el('span', {}, 'Temas a evaluar'), temas,
+    ]));
+    card.appendChild(el('div', { class: 'faint', style: 'margin-top:-8px;margin-bottom:14px' },
+      'Cuanto más específico, mejor. Si tenés la lista de palabras de la unidad, pegala tal cual.'));
+
+    /* --- Generar con IA --- */
+    const genBtn = el('button', { class: 'btn btn-primary btn-lg' }, [
+      el('span', { class: 'ai-badge' }, '✦ IA'),
+      document.createTextNode(' Armar la práctica'),
+    ]);
+    genBtn.addEventListener('click', async () => {
+      const t = temas.value.trim();
+      if (!t) return UI.toast('Escribí al menos un tema.', 'bad');
+      if (!App.ai.hasKey()) {
+        return UI.toast('Necesitás la API key de Gemini en Ajustes, o pegá un pack más abajo.', 'bad', 5000);
+      }
+      UI.busy(genBtn, true, 'Armando la práctica…');
+      try {
+        const pack = await App.ai.generateExamPack({
+          name: nombre.value.trim() || 'Prueba de inglés',
+          date: fecha.value,
+          topics: t,
+        });
+        const r = App.exams.parsePack(pack);
+        if (!r.ok) throw new Error(r.errors.join(' '));
+        r.exam.name = nombre.value.trim() || r.exam.name;
+        if (fecha.value) r.exam.date = fecha.value;
+        App.exams.add(r.exam);
+        if (r.errors.length) UI.toast(r.errors[0], 'info', 4000);
+        UI.toast('Práctica lista ✓', '', 2500);
+        App.app.go('examDetail', { id: r.exam.id });
+      } catch (e) {
+        UI.busy(genBtn, false);
+        UI.toast(e.message || 'No se pudo generar.', 'bad', 5000);
+      }
+    });
+    card.appendChild(genBtn);
+
+    /* --- Pegar un pack --- */
+    const pegar = el('details', { class: 'mt' });
+    pegar.appendChild(el('summary', { class: 'faint', style: 'cursor:pointer' },
+      'O pegar un pack ya armado (no necesita API key)'));
+    const packTa = el('textarea', {
+      placeholder: 'Pegá acá el pack en formato JSON que te pasaron.',
+      style: 'min-height:120px;margin-top:10px;font-family:var(--mono);font-size:13px',
+    });
+    pegar.appendChild(packTa);
+    const impBtn = el('button', { class: 'btn btn-lg mt' }, 'Importar pack');
+    impBtn.addEventListener('click', () => {
+      const r = App.exams.parsePack(packTa.value);
+      if (!r.ok) return UI.toast(r.errors[0], 'bad', 5000);
+      if (nombre.value.trim()) r.exam.name = nombre.value.trim();
+      if (fecha.value) r.exam.date = fecha.value;
+      App.exams.add(r.exam);
+      if (r.errors.length) UI.toast(r.errors.join(' '), 'info', 5000);
+      UI.toast('Pack importado ✓', '', 2500);
+      App.app.go('examDetail', { id: r.exam.id });
+    });
+    pegar.appendChild(impBtn);
+    card.appendChild(pegar);
+  };
+
+  /* ---------- Detalle de una prueba ---------- */
+  views.examDetail = function (root, params) {
+    const ex = params && App.exams.byId(params.id);
+    if (!ex) return App.app.go('exams');
+
+    root.innerHTML = '';
+    const back = el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:14px' }, '← Mis pruebas');
+    back.addEventListener('click', () => App.app.go('exams'));
+    root.appendChild(back);
+
+    const dias = App.exams.daysLeft(ex);
+    root.appendChild(el('h1', {}, ex.name));
+    root.appendChild(el('p', { class: 'faint', style: 'margin-top:-8px' },
+      [
+        dias === null ? 'Sin fecha'
+          : dias < 0 ? `Fue hace ${-dias} día${dias === -1 ? '' : 's'}`
+          : dias === 0 ? '⚠ Es hoy'
+          : `Faltan ${dias} día${dias === 1 ? '' : 's'}`,
+        `${(ex.vocab || []).length} palabras`,
+        `${(ex.questions || []).length} ejercicios`,
+      ].join(' · ')));
+
+    if ((ex.topics || []).length) {
+      const chips = el('div', { class: 'chips', style: 'margin-bottom:16px' });
+      ex.topics.forEach((t) => chips.appendChild(el('span', { class: 'chip on' }, t)));
+      root.appendChild(chips);
+    }
+
+    /* Repaso teórico */
+    if (ex.notes) {
+      const nCard = el('div', { class: 'card' });
+      nCard.appendChild(el('div', { class: 'card-head' }, [
+        el('div', { class: 'card-icon' }, '📘'),
+        el('h3', { style: 'margin:0' }, 'Lo que tenés que saber'),
+      ]));
+      const th = el('div', { class: 'theory' });
+      th.innerHTML = ex.notes;
+      nCard.appendChild(th);
+      root.appendChild(nCard);
+    }
+
+    /* Juegos disponibles */
+    const juegos = App.games.available(ex);
+    const gCard = el('div', { class: 'card' });
+    gCard.appendChild(el('h3', {}, 'Practicar'));
+    if (!juegos.length) {
+      gCard.appendChild(el('p', { class: 'muted' },
+        'Esta prueba no tiene suficiente material para los juegos. Editala y agregá vocabulario o ejercicios.'));
+    }
+    const grid = el('div', { class: 'block-list' });
+    juegos.forEach((g) => {
+      const best = ex.stats && ex.stats.best && ex.stats.best[g.id];
+      const btn = el('button', { class: 'block' }, [
+        el('div', { class: 'block-emoji' }, g.icon),
+        el('div', { class: 'block-body' }, [
+          el('div', { class: 'block-title' }, g.name),
+          el('div', { class: 'block-desc' }, g.desc),
+        ]),
+        best !== undefined
+          ? el('span', { class: 'lvl-tag' }, Math.round(best * 100) + '%')
+          : el('div', { class: 'block-check' }, '→'),
+      ]);
+      btn.addEventListener('click', () => App.app.go('examPlay', { id: ex.id, game: g.id }));
+      grid.appendChild(btn);
+    });
+    gCard.appendChild(grid);
+    root.appendChild(gCard);
+
+    /* Vocabulario de la prueba */
+    if ((ex.vocab || []).length) {
+      const vCard = el('div', { class: 'card' });
+      const head = el('div', { class: 'row spread' }, [
+        el('h3', { style: 'margin:0' }, `Vocabulario (${ex.vocab.length})`),
+        (() => {
+          const b = el('button', { class: 'btn btn-ghost btn-sm' }, '🔊 Escuchar todo');
+          b.addEventListener('click', async () => {
+            b.disabled = true;
+            for (const v of ex.vocab) {
+              try { await App.speech.speak(v.en); } catch (e) { break; }
+              await new Promise((r) => setTimeout(r, 180));
+            }
+            b.disabled = false;
+          });
+          return App.speech.ttsAvailable() ? b : null;
+        })(),
+      ]);
+      vCard.appendChild(head);
+      ex.vocab.forEach((v) => {
+        vCard.appendChild(el('div', { class: 'unit-row' }, [
+          el('div', { class: 'grow' }, [
+            el('div', { style: 'font-weight:600' }, v.en),
+            el('div', { class: 'faint' }, v.es),
+            v.example ? el('div', { class: 'faint', style: 'font-style:italic' }, v.example) : null,
+          ]),
+          (() => {
+            const sp = UI.speakButton(v.en, '🔊');
+            return sp;
+          })(),
+        ]));
+      });
+      root.appendChild(vCard);
+    }
+
+    /* Acciones */
+    const aCard = el('div', { class: 'card' });
+    aCard.appendChild(el('h3', {}, 'Gestionar'));
+
+    if (App.ai.hasKey()) {
+      const mas = el('button', { class: 'btn' }, [
+        el('span', { class: 'ai-badge' }, '✦ IA'),
+        document.createTextNode(' Generar más ejercicios'),
+      ]);
+      mas.addEventListener('click', async () => {
+        UI.busy(mas, true, 'Generando…');
+        try {
+          const pack = await App.ai.generateExamPack({
+            name: ex.name, date: ex.date,
+            topics: (ex.topics || []).join(', '),
+            avoid: (ex.questions || []).slice(-10).map((q) => q.prompt),
+          });
+          const r = App.exams.parsePack(pack);
+          if (!r.ok) throw new Error(r.errors.join(' '));
+          const vistos = new Set((ex.questions || []).map((q) => App.core.normalize(q.prompt)));
+          const nuevas = r.exam.questions.filter((q) => !vistos.has(App.core.normalize(q.prompt)));
+          const yaV = new Set((ex.vocab || []).map((v) => v.en.toLowerCase()));
+          const nuevoV = r.exam.vocab.filter((v) => !yaV.has(v.en.toLowerCase()));
+          App.exams.update(ex.id, {
+            questions: (ex.questions || []).concat(nuevas),
+            vocab: (ex.vocab || []).concat(nuevoV),
+          });
+          UI.toast(`+${nuevas.length} ejercicios y +${nuevoV.length} palabras`, '', 3500);
+          App.app.go('examDetail', { id: ex.id });
+        } catch (e) {
+          UI.busy(mas, false);
+          UI.toast(e.message || 'No se pudo generar.', 'bad', 4500);
+        }
+      });
+      aCard.appendChild(mas);
+    }
+
+    const exp = el('button', { class: 'btn mt' }, '⬇ Exportar este pack');
+    exp.addEventListener('click', () => {
+      const payload = {
+        name: ex.name, date: ex.date, topics: ex.topics,
+        notes: ex.notes, vocab: ex.vocab, questions: ex.questions,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = el('a', { href: url, download: ex.name.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') + '.json' });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      UI.toast('Pack descargado', '');
+    });
+    aCard.appendChild(exp);
+
+    const del = el('button', { class: 'btn btn-danger mt' }, 'Borrar esta prueba');
+    del.addEventListener('click', () => {
+      UI.confirm(`Se borra "${ex.name}" con todo su material. Tu progreso de inglés no se toca.`, () => {
+        App.exams.remove(ex.id);
+        App.app.go('exams');
+        UI.toast('Prueba borrada', 'info');
+      }, { danger: true, yes: 'Borrar' });
+    });
+    aCard.appendChild(del);
+    root.appendChild(aCard);
+  };
+
+  /* ---------- Jugar ---------- */
+  views.examPlay = function (root, params) {
+    const ex = params && App.exams.byId(params.id);
+    const juego = params && App.games.CATALOG.find((g) => g.id === params.game);
+    if (!ex || !juego) return App.app.go('exams');
+
+    root.innerHTML = '';
+    const bar = el('div', { class: 'row spread', style: 'margin-bottom:16px' });
+    const back = el('button', { class: 'btn btn-ghost btn-sm' }, '← Salir');
+    back.addEventListener('click', () => App.app.go('examDetail', { id: ex.id }));
+    bar.appendChild(back);
+    bar.appendChild(el('span', { class: 'pill' }, `${juego.icon} ${juego.name}`));
+    root.appendChild(bar);
+
+    const cont = el('div', { class: 'card' });
+    root.appendChild(cont);
+
+    App.games.play(juego.id, ex, cont, (score, otraVez) => {
+      // Se guarda SOLO en el examen. Nada de esto llega al progreso real.
+      App.exams.recordPlay(ex.id, juego.id, score);
+      if (otraVez) App.app.go('examPlay', { id: ex.id, game: juego.id });
+      else App.app.go('examDetail', { id: ex.id });
+    });
+  };
+
+  /* ============================================================
      AJUSTES
      ============================================================ */
   views.settings = function (root) {

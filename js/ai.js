@@ -296,6 +296,58 @@ Escribí un mensaje de apertura de 2 a 3 oraciones, en español rioplatense. Dir
     }], { system: TUTOR_SYSTEM, temperature: 1.0, maxTokens: 300 });
   }
 
+  /* ---------- Modo Examen ----------
+     Arma material de práctica a partir de los temas de una prueba
+     del colegio. Devuelve un "pack" que la app valida antes de usar. */
+  async function generateExamPack(opts) {
+    const o = opts || {};
+    const p = App.state.get();
+
+    const esquema = `Devolvé JSON con EXACTAMENTE esta forma:
+{
+  "name": "<nombre corto de la prueba>",
+  "topics": ["<tema 1>", "<tema 2>"],
+  "notes": "<HTML simple con el repaso teórico: usá <p>, <b>, <code>, <ul>, <li>. Entre 120 y 220 palabras. En español rioplatense, con ejemplos en inglés.>",
+  "vocab": [ ["<palabra en inglés>", "<traducción al español>", "<oración de ejemplo en inglés>"] ],
+  "questions": [
+    {"kind":"choice","prompt":"<oración con ___>","options":["a","b","c"],"correct":<índice>,"why":"<por qué, en español>"},
+    {"kind":"text","prompt":"<oración con ___>","accepted":["respuesta","variante"],"hint":"<pista opcional>","why":"<explicación>"},
+    {"kind":"order","prompt":"Ordená las palabras:","words":["las","palabras","sueltas"],"answer":"La oración correcta"}
+  ]
+}`;
+
+    const reglas = `Reglas estrictas:
+- 14 a 18 palabras en "vocab", todas del tema. Si el alumno pegó una lista de palabras, usá ESAS.
+- 14 a 18 preguntas en "questions", mezclando los tres tipos ("choice", "text", "order").
+- En "order", el array "words" debe contener EXACTAMENTE las palabras de "answer", ni una más ni una menos, desordenadas.
+- En "choice" las opciones tienen que ser todas distintas, y los distractores deben ser el error típico de un hispanohablante.
+- En "text", poné en "accepted" todas las variantes válidas (contracción y forma larga: "don't" y "do not").
+- El nivel debe ser el de una prueba de secundaria argentina, no el de un examen internacional.
+- Si el tema incluye gramática, que "notes" explique la regla con la comparación contra el español.`;
+
+    const evitar = (o.avoid && o.avoid.length)
+      ? `\nNO repitas estas consignas que ya existen:\n${o.avoid.map((x) => '- ' + x).join('\n')}`
+      : '';
+
+    return chatJson([{
+      role: 'user',
+      text: `${learnerContext()}
+
+El alumno tiene una prueba de inglés EN EL COLEGIO y necesita practicar estos temas:
+
+"""
+${o.topics}
+"""
+${o.name ? `Nombre de la prueba: ${o.name}` : ''}
+${o.date ? `Fecha: ${o.date}` : ''}
+${evitar}
+
+Armá el material de práctica. ${reglas}
+
+${esquema}`,
+    }], { system: TUTOR_SYSTEM, temperature: 0.9, maxTokens: 8000 });
+  }
+
   /* Test de nivel adaptativo */
   async function generatePlacementTest() {
     return chatJson([{
@@ -311,7 +363,7 @@ Devolvé JSON: {"questions":[{"q":"<pregunta o frase con ___>","o":["a","b","c",
     getKey, setKey, hasKey, clearKey, getModel, setModel, DEFAULT_MODEL,
     listModels, chat, chatJson,
     learnerContext, TUTOR_SYSTEM,
-    correctWriting, generateExercises, generateReading, roleplayTurn,
+    correctWriting, generateExercises, generateReading, roleplayTurn, generateExamPack,
     checkTranslation, ask, dailyBriefing, generatePlacementTest,
   };
 })(window.App);

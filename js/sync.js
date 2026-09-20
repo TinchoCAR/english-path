@@ -20,7 +20,7 @@
      es propio de cada dispositivo y no viaja. */
   const SYNCED = [
     'profile', 'history', 'srs', 'journal', 'placement', 'onboarded',
-    'session', 'tutor.history',
+    'session', 'tutor.history', 'exams',
     'used.reading', 'used.listening', 'used.writing', 'used.speaking', 'used.roleplay',
   ];
 
@@ -207,6 +207,37 @@
     return out;
   }
 
+  /* Pruebas del colegio: unión por id. Si la misma prueba existe en los dos
+     lados, gana la que tenga más material, y las estadísticas de juego se
+     quedan con el mejor puntaje de cada uno. */
+  function mergeExams(a, b) {
+    const porId = new Map();
+    [...(a || []), ...(b || [])].forEach((ex) => {
+      if (!ex || !ex.id) return;
+      const prev = porId.get(ex.id);
+      if (!prev) { porId.set(ex.id, ex); return; }
+
+      const peso = (x) => (x.vocab || []).length + (x.questions || []).length;
+      const base = peso(ex) > peso(prev) ? ex : prev;
+      const otro = base === ex ? prev : ex;
+
+      const best = Object.assign({}, (otro.stats || {}).best, (base.stats || {}).best);
+      Object.keys((otro.stats || {}).best || {}).forEach((g) => {
+        best[g] = Math.max(best[g] || 0, otro.stats.best[g] || 0);
+      });
+
+      porId.set(ex.id, Object.assign({}, base, {
+        stats: {
+          plays: Math.max((base.stats || {}).plays || 0, (otro.stats || {}).plays || 0),
+          lastPlayed: ((base.stats || {}).lastPlayed || '') >= ((otro.stats || {}).lastPlayed || '')
+            ? (base.stats || {}).lastPlayed : (otro.stats || {}).lastPlayed,
+          best,
+        },
+      }));
+    });
+    return Array.from(porId.values());
+  }
+
   /* Textos escritos: unión sin duplicados */
   function mergeJournal(a, b) {
     const seen = new Set();
@@ -255,6 +286,7 @@
     out.srs = mergeSrs(l.srs || {}, r.srs || {});
     out.history = mergeHistory(l.history || {}, r.history || {});
     out.journal = mergeJournal(l.journal, r.journal);
+    out.exams = mergeExams(l.exams, r.exams);
     out.session = mergeSession(l.session, r.session);
     out.onboarded = !!(l.onboarded || r.onboarded);
 
@@ -375,6 +407,6 @@
     getToken, setToken, getGistId, setGistId, isOn, lastSync, disable, deviceName,
     connect, fetchRemote, syncNow, background,
     localPayload, applyPayload, mergeStates,
-    mergeProfile, mergeSrs, mergeHistory, mergeJournal, mergeSession,
+    mergeProfile, mergeSrs, mergeHistory, mergeJournal, mergeSession, mergeExams,
   };
 })(window.App);

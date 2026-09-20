@@ -151,13 +151,18 @@ s { color: var(--bad); text-decoration-thickness: 2px; }
   padding: 7px 8px calc(7px + env(safe-area-inset-bottom, 0px));
 }
 .nav-btn {
-  flex: 1; max-width: 120px;
+  flex: 1; max-width: 100px; min-width: 0;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   background: none; border: 0; cursor: pointer;
   color: var(--text-faint); font-family: inherit;
   font-size: .68rem; font-weight: 600;
-  padding: 7px 4px; border-radius: var(--r-sm);
+  padding: 7px 2px; border-radius: var(--r-sm);
   transition: color .15s, background .15s;
+}
+/* Con cinco pestañas las etiquetas no deben partirse en dos líneas */
+.nav-btn span {
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%;
 }
 .nav-btn svg { width: 21px; height: 21px; stroke-width: 1.9; }
 .nav-btn:hover { color: var(--text-dim); }
@@ -556,6 +561,70 @@ table.mini th { color: var(--text-dim); font-weight: 650; font-size: .8rem; }
   border-radius: 5px; background: var(--surface-2); color: var(--text-faint);
 }
 
+/* ==================== JUEGOS (modo Examen) ==================== */
+
+/* Memoria */
+.memory-grid {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+}
+.mem-card {
+  aspect-ratio: 3 / 2; min-height: 62px;
+  display: grid; place-items: center; padding: 6px;
+  border-radius: var(--r); border: 1px solid var(--border);
+  background: var(--surface-2); color: transparent;
+  font-family: inherit; font-size: .78rem; font-weight: 600;
+  text-align: center; cursor: pointer; overflow: hidden;
+  transition: transform .18s, background .18s, border-color .18s;
+}
+.mem-card span { opacity: 0; transition: opacity .12s; word-break: break-word; }
+.mem-card::after {
+  content: '?'; position: absolute; font-size: 1.3rem;
+  color: var(--text-faint); font-weight: 700;
+}
+.mem-card { position: relative; }
+.mem-card.up, .mem-card.ok, .mem-card.no { color: var(--text); }
+.mem-card.up span, .mem-card.ok span, .mem-card.no span { opacity: 1; }
+.mem-card.up::after, .mem-card.ok::after, .mem-card.no::after { content: none; }
+.mem-card.up { background: var(--bg-2); border-color: var(--blue); transform: scale(1.04); }
+.mem-card.en.up { border-color: var(--purple); }
+.mem-card.ok {
+  background: color-mix(in srgb, var(--ok) 16%, transparent);
+  border-color: var(--ok); color: var(--ok); cursor: default;
+}
+.mem-card.no { background: color-mix(in srgb, var(--bad) 16%, transparent); border-color: var(--bad); }
+
+/* Ahorcado */
+.hangman-word {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: center; margin: 6px 0 4px;
+}
+.hm-slot {
+  width: 30px; height: 40px;
+  display: grid; place-items: center;
+  border-bottom: 3px solid var(--border);
+  font-size: 1.3rem; font-weight: 700; font-family: var(--mono);
+  transition: border-color .2s, color .2s;
+}
+.hm-slot.on { border-bottom-color: var(--accent); color: var(--accent); }
+.hm-slot.space { border-bottom-color: transparent; }
+
+.keyboard {
+  display: grid; gap: 5px; margin-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+}
+.key {
+  aspect-ratio: 1; min-height: 38px;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text);
+  font-family: inherit; font-size: .88rem; font-weight: 650;
+  cursor: pointer; transition: all .12s;
+}
+.key:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+.key:disabled { cursor: default; opacity: .45; }
+.key.hit { background: color-mix(in srgb, var(--ok) 25%, transparent); border-color: var(--ok); color: var(--ok); opacity: 1; }
+.key.miss { background: color-mix(in srgb, var(--bad) 20%, transparent); border-color: var(--bad); color: var(--bad); }
+
 /* ==================== TOAST / MODAL ==================== */
 
 .toasts {
@@ -635,12 +704,18 @@ table.mini th { color: var(--text-dim); font-weight: 650; font-size: .8rem; }
 
 @media (max-width: 560px) {
   .app { padding: 0 12px 104px; }
-  .topbar { margin: 0 -12px 16px; padding: 10px 12px; }
+  .topbar { margin: 0 -12px 16px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; }
   h1 { font-size: 1.45rem; }
   .card { padding: 16px; border-radius: var(--r); }
   .fc-word { font-size: 1.65rem; }
   .grade-row { grid-template-columns: repeat(2, 1fr); }
   .bubble { max-width: 90%; }
+  .nav-btn { font-size: .62rem; }
+  .nav-btn svg { width: 19px; height: 19px; }
+  .memory-grid { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 6px; }
+  .mem-card { font-size: .7rem; min-height: 54px; }
+  .keyboard { grid-template-columns: repeat(7, 1fr); }
+  .hm-slot { width: 24px; height: 34px; font-size: 1.1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

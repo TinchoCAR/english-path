@@ -20,7 +20,7 @@
    Vale para CUALQUIER cambio: un .js, el .css, el index.html
    o hasta una coma en este mismo archivo.                      */
 
-const VERSION = 'v2';   // <--- ESTE ES EL NÚMERO QUE TENÉS QUE SUBIR
+const VERSION = 'v3';   // <--- ESTE ES EL NÚMERO QUE TENÉS QUE SUBIR
 
 const CACHE = 'english-path-' + VERSION;
 
@@ -36,6 +36,7 @@ const SHELL = [
   './js/data/grammar-b2.js',
   './js/data/content.js',
   './js/data/placement.js',
+  './js/data/exams.js',
   './js/state.js',
   './js/srs.js',
   './js/session.js',
@@ -44,6 +45,7 @@ const SHELL = [
   './js/speech.js',
   './js/ui.js',
   './js/activities.js',
+  './js/games.js',
   './js/views.js',
   './js/app.js',
   './icons/icon-192.png',
