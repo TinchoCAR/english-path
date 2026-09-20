@@ -121,10 +121,14 @@
   }
 
   function buildTranslation(rng, p, count) {
-    const levels = levelLadder(p.level);
-    let pool = App.content.TRANSLATIONS.filter((t) => levels.includes(t.level));
-    if (pool.length < count) pool = App.content.TRANSLATIONS;
-    const items = rng.sample(pool, count);
+    let pool = App.content.TRANSLATIONS.filter((t) => levelLadder(p.level).includes(t.level));
+    // Si no alcanza, ampliamos UN escalón. Antes caíamos a todo el banco y a
+    // un alumno de A2 le podían tocar traducciones de B2.
+    if (pool.length < count) {
+      const wider = receptiveLadder(p.level);
+      pool = App.content.TRANSLATIONS.filter((t) => wider.includes(t.level));
+    }
+    const items = rng.sample(pool, Math.min(count, pool.length));
     return { type: 'translation', items: items.map((t) => App.content.TRANSLATIONS.indexOf(t)) };
   }
 
@@ -165,10 +169,13 @@
 
   /* ---------- Plan del día ---------- */
 
-  function buildPlan(dateKey) {
+  /* override: { seed, skill } — lo usa el botón de rehacer la sesión para
+     obtener contenido distinto del que ya salió hoy. */
+  function buildPlan(dateKey, override) {
     const date = dateKey || todayKey();
     const p = App.state.get();
-    const rng = makeRng(date + '|' + p.level + '|' + (p.topics || []).join(','));
+    const o = override || {};
+    const rng = makeRng(o.seed || (date + '|' + p.level + '|' + (p.topics || []).join(',')));
     const mins = p.dailyMinutes || 25;
 
     // Cuántos bloques y de qué tamaño según el tiempo disponible
@@ -185,7 +192,7 @@
     const g = buildGrammar(rng, p, cfg.grammarEx);
     if (g) blocks.push(g);
 
-    const skill = ROTATION[weekdayOf(date)];
+    const skill = o.skill || ROTATION[weekdayOf(date)];
     const builders = {
       reading: () => buildReading(rng, p),
       listening: () => buildListening(rng, p),
@@ -240,14 +247,18 @@
     return { done, total: s.blocks.length, complete: done === s.blocks.length, pct: done / s.blocks.length };
   }
 
-  // Regenera la sesión del día (por si querés otro contenido hoy mismo)
+  /* Regenera la sesión del día con contenido distinto.
+     Hay que pasarle otra semilla Y otra destreza: con la semilla de la fecha
+     el plan sale idéntico, que es justo lo que este botón promete evitar. */
   function reroll() {
-    const p = App.state.get();
-    const rng = makeRng(todayKey() + '|reroll|' + Date.now());
-    const plan = buildPlan();
-    // Barajamos el skill del día para que realmente cambie
-    const all = ['reading', 'listening', 'writing', 'speaking', 'translation', 'roleplay'];
-    plan.skill = rng.pick(all.filter((x) => x !== plan.skill));
+    const actual = current();
+    const rng = makeRng('reroll|' + Date.now());
+    const otras = ['reading', 'listening', 'writing', 'speaking', 'translation', 'roleplay']
+      .filter((x) => x !== actual.skill);
+    const plan = buildPlan(todayKey(), {
+      seed: 'reroll|' + todayKey() + '|' + Date.now(),
+      skill: rng.pick(otras),
+    });
     store.set('session', plan);
     return plan;
   }

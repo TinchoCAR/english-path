@@ -173,12 +173,12 @@ window.App = window.App || {};
       .toLowerCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[’']/g, "'")
-      .replace(/[.,!?;:"“”()\-–—]/g, ' ')
+      .replace(/[.,!?;:"“”()\/\-–—]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
 
-  // Distancia de Levenshtein — para aceptar respuestas con un typo menor.
+  // Distancia de Levenshtein clásica.
   function levenshtein(a, b) {
     if (a === b) return 0;
     if (!a.length) return b.length;
@@ -198,15 +198,100 @@ window.App = window.App || {};
     return prev[b.length];
   }
 
-  // ¿Es correcta la respuesta? Acepta variantes y tolera 1 typo en palabras largas.
+  /* Variante Damerau (alineación óptima): cuenta el intercambio de dos letras
+     contiguas como UN error. Es el typo más común al escribir rápido
+     ("recieved" por "received") y sin esto se penalizaba como dos errores. */
+  function damerau(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    const m = a.length, n = b.length;
+    const d = Array.from({ length: m + 1 }, (_, i) => {
+      const row = new Array(n + 1).fill(0);
+      row[0] = i;
+      return row;
+    });
+    for (let j = 0; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[m][n];
+  }
+
+  /* Palabras cuya forma exacta ES lo que evalúan los ejercicios.
+     Un "error de tipeo" acá nunca es un descuido: es un error de gramática. */
+  const GRAMMAR_WORDS = new Set([
+    'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'do', 'does', 'did', 'done', 'have', 'has', 'had', 'having',
+    'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must',
+    'a', 'an', 'the', 'this', 'that', 'these', 'those',
+    'in', 'on', 'at', 'to', 'of', 'for', 'since', 'from', 'by', 'with', 'about',
+    'into', 'over', 'under', 'through', 'during', 'until', 'than', 'then',
+    'not', 'no', 'and', 'or', 'but', 'if', 'as', 'so',
+    'he', 'she', 'it', 'they', 'we', 'you', 'i', 'him', 'her', 'them', 'us', 'me',
+    'his', 'its', 'their', 'our', 'your', 'my',
+    'much', 'many', 'few', 'little', 'some', 'any', 'more', 'most', 'less',
+    'who', 'whom', 'whose', 'which', 'what', 'where', 'when', 'why', 'how',
+  ]);
+
+  /* ¿La diferencia entre dos palabras es una terminación gramatical?
+     work/works, study/studied, big/bigger, go/going… Eso no es un typo:
+     es exactamente el punto que el ejercicio está evaluando. */
+  function isMorphologicalDiff(a, b) {
+    const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+    if (!longer.startsWith(shorter.slice(0, Math.max(1, shorter.length - 2)))) {
+      // Ni siquiera comparten raíz: es otra palabra, no una terminación.
+      if (longer.length - shorter.length > 3) return false;
+    }
+    const SUFFIXES = ['s', 'es', 'd', 'ed', 'ing', 'er', 'est', 'ies', 'ied', 'en'];
+    for (const suf of SUFFIXES) {
+      if (longer === shorter + suf) return true;
+      // Casos con cambio de raíz: study→studies, big→bigger, make→making
+      if (longer === shorter.slice(0, -1) + suf) return true;
+      if (longer === shorter + shorter.slice(-1) + suf) return true;
+    }
+    return false;
+  }
+
+  /* ¿Es correcta la respuesta?
+     Perdona errores de tipeo en palabras de contenido, pero NUNCA
+     diferencias gramaticales: concordancia, terminaciones verbales,
+     auxiliares, preposiciones ni artículos. */
   function answerMatches(given, expected) {
     const g = normalize(given);
     const variants = (Array.isArray(expected) ? expected : [expected]).map(normalize);
+
     for (const v of variants) {
       if (!v) continue;
       if (g === v) return { ok: true, typo: false };
-      const tolerance = v.length > 8 ? 2 : v.length > 4 ? 1 : 0;
-      if (tolerance && levenshtein(g, v) <= tolerance) return { ok: true, typo: true };
+
+      const gw = g.split(' '), vw = v.split(' ');
+      // Distinta cantidad de palabras: falta o sobra algo, no es un typo.
+      if (gw.length !== vw.length) continue;
+
+      let typos = 0, rejected = false;
+      for (let i = 0; i < vw.length && !rejected; i++) {
+        if (gw[i] === vw[i]) continue;
+
+        // Cualquier diferencia en una palabra gramatical invalida la respuesta.
+        if (GRAMMAR_WORDS.has(vw[i]) || GRAMMAR_WORDS.has(gw[i])) { rejected = true; break; }
+        // Diferencia de terminación: es gramática, no tipeo.
+        if (isMorphologicalDiff(gw[i], vw[i])) { rejected = true; break; }
+
+        // Palabra de contenido: perdonamos un desliz proporcional a su largo.
+        const budget = vw[i].length >= 9 ? 2 : vw[i].length >= 5 ? 1 : 0;
+        if (!budget || damerau(gw[i], vw[i]) > budget) { rejected = true; break; }
+        typos++;
+      }
+
+      // Como mucho un desliz por respuesta: dos ya no es distracción.
+      if (!rejected && typos > 0 && typos <= 1) return { ok: true, typo: true };
     }
     return { ok: false, typo: false };
   }
@@ -223,6 +308,7 @@ window.App = window.App || {};
     $, $$, el,
     todayKey, dateFromKey, daysBetween, addDays, weekdayOf, prettyDate, DIAS, MESES,
     hashString, mulberry32, makeRng,
+    damerau, isMorphologicalDiff,
     store,
     normalize, levenshtein, answerMatches, escapeHtml, clamp,
   };

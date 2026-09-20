@@ -1,13 +1,27 @@
 /* ============================================================
    sw.js — Service worker
    Hace que la app funcione sin conexión en el celular.
+   ============================================================
 
-   IMPORTANTE: al cambiar cualquier archivo, subí VERSION.
-   Si no, los navegadores que ya la tienen instalada siguen
-   sirviendo la versión vieja desde caché.
-   ============================================================ */
+   ┌──────────────────────────────────────────────────────────┐
+   │  ¿TOCASTE ALGÚN ARCHIVO DE LA APP?                       │
+   │  Cambiá el número de la línea de abajo ANTES de subirlo. │
+   │      'v2'  ->  'v3'  ->  'v4' ...                        │
+   │                                                          │
+   │  Si no lo hacés, tu celular va a seguir mostrando la     │
+   │  versión vieja: la tiene guardada y no se entera de que  │
+   │  hay una nueva. Es lo mismo que la hace andar offline.   │
+   │                                                          │
+   │  Después:  git add -A                                    │
+   │            git commit -m "lo que cambiaste"              │
+   │            git push                                      │
+   └──────────────────────────────────────────────────────────┘
 
-const VERSION = 'v1';
+   Vale para CUALQUIER cambio: un .js, el .css, el index.html
+   o hasta una coma en este mismo archivo.                      */
+
+const VERSION = 'v2';   // <--- ESTE ES EL NÚMERO QUE TENÉS QUE SUBIR
+
 const CACHE = 'english-path-' + VERSION;
 
 const SHELL = [

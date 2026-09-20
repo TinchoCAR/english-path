@@ -73,14 +73,25 @@
     const levels = ladder[p.level] || ['A2'];
     const topics = (p.topics && p.topics.length) ? p.topics.concat('core') : null;
 
+    const sinVer = (it) => !d[it.id];
     let pool = App.vocab.ITEMS.filter((it) =>
-      !d[it.id] && levels.includes(it.level) && (!topics || topics.includes(it.topic))
+      sinVer(it) && levels.includes(it.level) && (!topics || topics.includes(it.topic))
     );
-    // Si se agotó el pool filtrado, abrimos el criterio antes que quedarnos sin nada.
+
+    // Al agotarse, ampliamos por pasos. Primero soltamos el filtro de temas,
+    // después subimos UN nivel. Saltar directo a todo el banco le metía
+    // palabras de B2 a alguien que todavía está en A2.
     if (pool.length < 5) {
-      pool = App.vocab.ITEMS.filter((it) => !d[it.id] && levels.includes(it.level));
+      pool = App.vocab.ITEMS.filter((it) => sinVer(it) && levels.includes(it.level));
     }
-    if (pool.length < 5) pool = App.vocab.ITEMS.filter((it) => !d[it.id]);
+    if (pool.length < 5) {
+      const arriba = { A2: ['A2', 'B1'], B1: ['A2', 'B1', 'B2'], B2: ['B1', 'B2'] }[p.level] || levels;
+      pool = App.vocab.ITEMS.filter((it) =>
+        sinVer(it) && arriba.includes(it.level) && (!topics || topics.includes(it.topic))
+      );
+      if (pool.length < 5) pool = App.vocab.ITEMS.filter((it) => sinVer(it) && arriba.includes(it.level));
+    }
+    if (pool.length < 5) pool = App.vocab.ITEMS.filter(sinVer);
     return rng ? rng.shuffle(pool) : pool;
   }
 

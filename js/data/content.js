@@ -527,6 +527,11 @@ The practical advice is therefore unglamorous. Work on stress and rhythm, record
     { id: 'w15', level: 'B2', topic: 'sports', words: 140, task: 'Analizá cómo un evento deportivo internacional impacta la economía de la ciudad anfitriona.', must: ['cause and effect language', 'at least one passive construction', 'a balanced conclusion'] },
     { id: 'w16', level: 'B2', topic: 'business', words: 120, task: 'Escribí el acta (minutes) de una reunión sobre demoras logísticas: puntos tratados, decisiones y responsables.', must: ['impersonal/passive style', 'action items with owners', 'a deadline'] },
     { id: 'w17', level: 'B1', topic: 'business', words: 90, task: 'Escribí un email pidiendo una prórroga de plazo de pago de 30 a 60 días, justificando el pedido.', must: ['polite request', 'a reason', 'a commitment'] },
+    { id: 'w19', level: 'A2', topic: 'business', words: 60, task: 'Escribí un email confirmando que recibiste un pedido y avisando cuándo lo vas a enviar.', must: ['a greeting', 'confirmation', 'a date', 'a polite closing'] },
+    { id: 'w20', level: 'A2', topic: 'tech', words: 70, task: 'Describí tu celular o tu computadora: qué modelo es, qué te gusta y qué no.', must: ['present simple', 'two adjectives', 'one thing you dislike'] },
+    { id: 'w21', level: 'A2', topic: 'sports', words: 70, task: 'Contá un partido o competencia que viste. Quién jugó, qué pasó, cómo terminó.', must: ['past simple', 'the result', 'your opinion'] },
+    { id: 'w22', level: 'A2', topic: 'core', words: 70, task: 'Escribí qué vas a hacer el fin de semana. Usá "going to" y "will".', must: ['going to', 'will', 'a time expression'] },
+    { id: 'w23', level: 'A2', topic: 'business', words: 70, task: 'Presentate para un trabajo de verano: quién sos, qué estudiás y por qué te interesa.', must: ['present simple', 'your studies', 'one reason'] },
     { id: 'w18', level: 'B2', topic: 'core', words: 130, task: 'Escribí una respuesta a esta afirmación: "Aprender idiomas ya no tiene sentido porque los traductores automáticos son perfectos".', must: ['a clear stance', 'a concession', 'a strong closing argument'] },
   ];
 
@@ -546,6 +551,11 @@ The practical advice is therefore unglamorous. Work on stress and rhythm, record
     { id: 'p12', level: 'B2', topic: 'tech', title: 'Pitching an app idea', role: 'Presentás tu idea de app a un inversor.', goal: 'Explicar el problema, la solución y el modelo de negocio en 3 minutos.', ai: 'You are an investor. Ask about the market size, the competition and how it makes money. Be direct.' },
     { id: 'p13', level: 'A2', topic: 'pop', title: 'Meeting someone new', role: 'Conocés a alguien en un intercambio estudiantil.', goal: 'Presentarte, preguntar por sus intereses y proponer un plan.', ai: 'You are a friendly exchange student from Canada. Keep the language simple and ask lots of questions.' },
     { id: 'p14', level: 'B2', topic: 'business', title: 'Trade fair small talk', role: 'Estás en una feria internacional en Alemania.', goal: 'Romper el hielo, presentar tu empresa y conseguir una reunión.', ai: 'You are a potential distributor visiting the stand. Be politely curious but busy — the student must earn your attention.' },
+    { id: 'p15', level: 'A2', topic: 'business', title: 'Asking about a product', role: 'Entrás a un local a preguntar por un producto.', goal: 'Preguntar precio, colores disponibles y si hay descuento.', ai: 'You are a friendly shop assistant. Use simple English, short sentences. Answer questions and offer alternatives.' },
+    { id: 'p16', level: 'A2', topic: 'core', title: 'Ordering food', role: 'Estás en un restaurante en el exterior.', goal: 'Pedir la comida, preguntar por un ingrediente y pedir la cuenta.', ai: 'You are a waiter. Speak simply and clearly. Ask what they want to drink and suggest a dessert.' },
+    { id: 'p17', level: 'A2', topic: 'tech', title: 'Buying a laptop', role: 'Necesitás una computadora para estudiar.', goal: 'Explicar para qué la querés y comparar dos opciones.', ai: 'You are a shop assistant in an electronics store. Use simple English. Compare two laptops and ask about their budget.' },
+    { id: 'p18', level: 'A2', topic: 'sports', title: 'Talking about a match', role: 'Un compañero de intercambio te pregunta por el fútbol argentino.', goal: 'Explicar quién es tu equipo y contar un partido.', ai: 'You are a curious exchange student who knows nothing about Argentine football. Ask simple questions and react with interest.' },
+    { id: 'p19', level: 'A2', topic: 'core', title: 'Asking for directions', role: 'Estás perdido en una ciudad que no conocés.', goal: 'Preguntar cómo llegar y entender la respuesta.', ai: 'You are a local. Give directions with simple language: turn left, go straight, it is next to the bank. Ask if they understood.' },
   ];
 
   /* ================== TRADUCCIÓN ES → EN ================== */
@@ -600,6 +610,20 @@ The practical advice is therefore unglamorous. Work on stress and rhythm, record
     { es: 'Su oferta no es tan competitiva como la nuestra.', en: ['Their offer is not as competitive as ours'], level: 'B1', focus: 'not as… as' },
     { es: 'Me preguntaba si podría extender el plazo.', en: ['I was wondering whether you could extend the deadline', 'I was wondering if you could extend the deadline'], level: 'B2', focus: 'hedging' },
     { es: 'Todos los exportadores deben cumplir con la normativa.', en: ['All exporters must comply with the regulations'], level: 'B2', focus: 'comply with' },
+
+    /* --- Nivel A2: base para arrancar --- */
+    { es: '¿Podés enviarme el precio, por favor?', en: ['Can you send me the price, please', 'Could you send me the price, please'], level: 'A2', focus: 'pedido simple' },
+    { es: 'La mercadería llegó ayer.', en: ['The goods arrived yesterday'], level: 'A2', focus: 'pasado simple' },
+    { es: 'No tenemos suficiente stock.', en: ['We do not have enough stock', "We don't have enough stock"], level: 'A2', focus: 'enough' },
+    { es: 'Ella trabaja en una empresa de importación.', en: ['She works in an import company', 'She works at an import company'], level: 'A2', focus: 'tercera persona -s' },
+    { es: 'El envío sale el lunes a las ocho.', en: ['The shipment leaves on Monday at eight'], level: 'A2', focus: 'preposiciones de tiempo' },
+    { es: '¿Cuánto cuesta el flete?', en: ['How much does the freight cost', 'How much is the freight'], level: 'A2', focus: 'how much' },
+    { es: 'Nunca trabajé en el exterior.', en: ['I have never worked abroad', "I've never worked abroad"], level: 'A2', focus: 'present perfect' },
+    { es: 'Este modelo es más caro que el otro.', en: ['This model is more expensive than the other one', 'This model is more expensive than the other'], level: 'A2', focus: 'comparativo' },
+    { es: 'Estamos esperando la factura.', en: ['We are waiting for the invoice', "We're waiting for the invoice"], level: 'A2', focus: 'presente continuo' },
+    { es: 'Tenés que firmar el formulario.', en: ['You have to sign the form', 'You must sign the form'], level: 'A2', focus: 'obligación' },
+    { es: 'No pude ir a la reunión.', en: ["I couldn't go to the meeting", 'I could not go to the meeting'], level: 'A2', focus: 'could' },
+    { es: 'Voy a llamar al proveedor mañana.', en: ['I am going to call the supplier tomorrow', "I'm going to call the supplier tomorrow"], level: 'A2', focus: 'going to' },
   ];
 
   App.content = { READINGS, DIALOGUES, WRITING, ROLEPLAYS, TRANSLATIONS };

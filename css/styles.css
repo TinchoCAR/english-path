@@ -11,7 +11,7 @@
   --border:      #26325c;
   --text:        #e8ecf8;
   --text-dim:    #96a2c8;
-  --text-faint:  #64709a;
+  --text-faint:  #7d89b5;
 
   --accent:      #4ade80;
   --accent-dim:  #22c55e;
@@ -38,7 +38,7 @@
   --border:      #dfe4f2;
   --text:        #131a30;
   --text-dim:    #5b678c;
-  --text-faint:  #8b95b5;
+  --text-faint:  #666e8c;
   --accent:      #16a34a;
   --accent-dim:  #15803d;
   --accent-glow: rgba(22, 163, 74, .12);
@@ -52,6 +52,9 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Sin el recuadro gris que Android dibuja al tocar un botón */
+button, a, .option, .block, .word-tile, .chip { -webkit-tap-highlight-color: transparent; }
 
 html, body {
   margin: 0; padding: 0;
@@ -91,7 +94,11 @@ s { color: var(--bad); text-decoration-thickness: 2px; }
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
-  margin: 0 -16px 20px; padding: 12px 16px;
+  margin: 0 -16px 20px;
+  /* El padding superior suma el alto de la barra de estado del teléfono.
+     Instalada como app en iPhone el contenido arranca bajo el notch, y sin
+     esto la barra superior queda tapada. */
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
 }
 .topbar-row { display: flex; align-items: center; gap: 12px; }
 
@@ -224,7 +231,10 @@ label.field > span {
   color: var(--text-dim); margin-bottom: 6px;
 }
 input[type=text], input[type=password], input[type=number], select, textarea {
-  width: 100%; font-family: inherit; font-size: .95rem;
+  width: 100%; font-family: inherit;
+  /* 16px exactos: por debajo de eso Safari en iPhone hace zoom automático
+     al tocar el campo y te descoloca toda la pantalla. */
+  font-size: 16px;
   padding: 11px 14px; border-radius: var(--r);
   background: var(--bg-2); border: 1px solid var(--border);
   color: var(--text); outline: none;

@@ -267,8 +267,14 @@
             const card2 = App.srs.review(item.id, g);
             reviewed++;
             if (g !== 'again') good++;
-            if (g === 'again') queue.push(queue[idx]); // vuelve al final de la cola
-            else {
+            if (g === 'again') {
+              // Vuelve al final de la cola, pero con tope: sin esto, apretar
+              // "No sabía" una y otra vez haría que el bloque no termine nunca.
+              const entry = queue[idx];
+              entry.retries = (entry.retries || 0) + 1;
+              if (entry.retries <= 2) queue.push(entry);
+              else UI.toast('La dejamos para mañana', 'info', 1600);
+            } else {
               const days = card2.interval;
               UI.toast(`Próximo repaso en ${days} día${days === 1 ? '' : 's'}`, 'info', 1400);
             }
