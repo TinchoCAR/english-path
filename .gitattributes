@@ -1,0 +1,5 @@
+# Normaliza finales de linea: evita diffs ruidosos entre Windows y el servidor
+* text=auto eol=lf
+
+# Binarios: que git no los toque
+*.png binary

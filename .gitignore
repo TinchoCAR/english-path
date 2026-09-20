@@ -1,0 +1,22 @@
+# Dependencias (este proyecto no las necesita, pero por si probás algo)
+node_modules/
+package-lock.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# NUNCA subas claves de API.
+# La key de Gemini se guarda en el navegador (localStorage), no en archivos.
+# Estas reglas son una red de seguridad por si creás alguno de estos archivos.
+.env
+.env.*
+*.key
+secrets.json
+config.local.js
